@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, User, type LucideIcon } from "lucide-react"
+import { Home, ArrowLeftRight, User, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -14,9 +14,12 @@ type NavItem = {
 
 // Adjust freely — this is the single place that defines the app's bottom nav.
 // Friend search/requests live on the Profile page, not a separate tab — see
-// docs/tasks/structure.md.
+// docs/tasks/structure.md. Transactions is a global cross-friend log,
+// distinct from Home (totals + per-friend summary) — see
+// docs/tasks/transactions-ui.md.
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/profile", label: "Profile", icon: User },
 ]
 
