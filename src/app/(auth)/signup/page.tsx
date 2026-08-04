@@ -47,7 +47,7 @@ export default function SignupPage() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        setError(signUpError.message || "Something went wrong. Please try again.");
         return;
       }
     } catch {
