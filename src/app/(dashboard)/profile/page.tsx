@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { logout } from "../actions";
+import { getFriends, getSentRequests, getIncomingRequests } from "./_lib/get-friendships";
 import { AvatarUploader } from "./_components/avatar-uploader";
 import { UsernameForm } from "./_components/username-form";
 import { PasswordForm } from "./_components/password-form";
+import { FriendsList } from "./_components/friends-list";
 import { FriendSearch } from "./_components/friend-search";
+import { SentRequestList } from "./_components/sent-request-list";
 import { FriendRequestInbox } from "./_components/friend-request-inbox";
 
 export default async function ProfilePage() {
@@ -27,21 +30,11 @@ export default async function ProfilePage() {
     .eq("id", userId)
     .single();
 
-  const { data: pendingRequests } = await supabase
-    .from("friendships")
-    .select("id, requester_id")
-    .eq("addressee_id", userId)
-    .eq("status", "pending");
-
-  const requesterIds = (pendingRequests ?? []).map((request) => request.requester_id);
-  const { data: requesterProfiles } = requesterIds.length
-    ? await supabase.from("profiles").select("id, username, avatar_url").in("id", requesterIds)
-    : { data: [] as { id: string; username: string; avatar_url: string | null }[] };
-
-  const incomingRequests = (pendingRequests ?? []).map((request) => ({
-    id: request.id,
-    requester: requesterProfiles?.find((candidate) => candidate.id === request.requester_id) ?? null,
-  }));
+  const [friends, sentRequests, incomingRequests] = await Promise.all([
+    getFriends(supabase, userId),
+    getSentRequests(supabase, userId),
+    getIncomingRequests(supabase, userId),
+  ]);
 
   return (
     <div className="flex flex-col gap-8 px-4 py-6">
@@ -54,7 +47,11 @@ export default async function ProfilePage() {
 
       <PasswordForm />
 
+      <FriendsList friends={friends} />
+
       <FriendSearch currentUserId={userId} />
+
+      <SentRequestList requests={sentRequests} />
 
       <FriendRequestInbox requests={incomingRequests} />
 

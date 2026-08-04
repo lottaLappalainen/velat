@@ -1,13 +1,9 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { respondToFriendRequest } from "../actions";
+import type { FriendshipProfile } from "../_lib/get-friendships";
 
-type IncomingRequest = {
-  id: string;
-  requester: { id: string; username: string; avatar_url: string | null } | null;
-};
-
-export function FriendRequestInbox({ requests }: { requests: IncomingRequest[] }) {
+export function FriendRequestInbox({ requests }: { requests: FriendshipProfile[] }) {
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-foreground">Friend requests</h2>
@@ -19,20 +15,16 @@ export function FriendRequestInbox({ requests }: { requests: IncomingRequest[] }
       ) : (
         <ul className="flex flex-col gap-2">
           {requests.map((request) => (
-            <li key={request.id} className="flex items-center gap-2">
+            <li key={request.friendshipId} className="flex items-center gap-2">
               <Avatar className="size-8">
-                {request.requester?.avatar_url && (
-                  <AvatarImage src={request.requester.avatar_url} alt={request.requester.username} />
-                )}
-                <AvatarFallback>{request.requester?.username?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+                {request.avatarUrl && <AvatarImage src={request.avatarUrl} alt={request.username} />}
+                <AvatarFallback>{request.username[0]?.toUpperCase() ?? "?"}</AvatarFallback>
               </Avatar>
-              <span className="flex-1 text-sm text-foreground">
-                {request.requester?.username ?? "Unknown user"}
-              </span>
+              <span className="flex-1 text-sm text-foreground">{request.username}</span>
               <form
                 action={async () => {
                   "use server";
-                  await respondToFriendRequest(request.id, true);
+                  await respondToFriendRequest(request.friendshipId, true);
                 }}
               >
                 <Button type="submit" size="sm">
@@ -42,7 +34,7 @@ export function FriendRequestInbox({ requests }: { requests: IncomingRequest[] }
               <form
                 action={async () => {
                   "use server";
-                  await respondToFriendRequest(request.id, false);
+                  await respondToFriendRequest(request.friendshipId, false);
                 }}
               >
                 <Button type="submit" size="sm" variant="secondary">

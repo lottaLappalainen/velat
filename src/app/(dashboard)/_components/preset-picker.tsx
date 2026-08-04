@@ -4,6 +4,16 @@ import { useState } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatMoney } from "@/lib/format";
 import { deletePreset } from "../_lib/transaction-actions";
 import type { Preset } from "../_lib/get-presets";
@@ -20,6 +30,7 @@ export function PresetPicker({
 }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [confirmingPreset, setConfirmingPreset] = useState<Preset | null>(null);
 
   async function handleDelete(presetId: string) {
     setDeletingId(presetId);
@@ -53,12 +64,45 @@ export function PresetPicker({
             size="icon-xs"
             aria-label={`Delete preset ${preset.name}`}
             disabled={deletingId === preset.id}
-            onClick={() => handleDelete(preset.id)}
+            onClick={() => setConfirmingPreset(preset)}
           >
             <X className="size-3" />
           </Button>
         </div>
       ))}
+
+      <AlertDialog
+        open={confirmingPreset !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmingPreset(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete preset?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmingPreset && (
+                <>
+                  “{confirmingPreset.name} · {formatMoney(confirmingPreset.amount, confirmingPreset.currency)}”
+                  will be gone for good — this doesn&apos;t affect any transactions you already logged with it.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (confirmingPreset) handleDelete(confirmingPreset.id);
+                setConfirmingPreset(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

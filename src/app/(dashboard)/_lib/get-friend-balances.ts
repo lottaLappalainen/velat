@@ -31,7 +31,7 @@ export async function getFriendBalances(
     supabase.from("profiles").select("id, username, avatar_url").in("id", friendIds),
     supabase
       .from("balances")
-      .select("user_a, user_b, net_amount")
+      .select("user_a, user_b, net_amount, last_activity_at")
       .or(`user_a.eq.${viewerId},user_b.eq.${viewerId}`),
   ]);
 
@@ -49,10 +49,27 @@ export async function getFriendBalances(
       username: profile?.username ?? "Unknown",
       avatarUrl: profile?.avatar_url ?? null,
       balance: getViewerRelativeBalance(viewerId, balanceRow),
+      lastActivityAt: balanceRow?.last_activity_at ?? null,
     };
   });
 
-  // Sort order isn't decided yet (docs/tasks/homepage-ui.md, open items) —
-  // alphabetical by username chosen as the simplest deterministic default.
-  return results.sort((a, b) => a.username.localeCompare(b.username));
+  // Most-recent-transaction-first (docs/tasks/homepage-ui.md, "Open items" —
+  // now resolved). A friend with no transactions yet has no last_activity_at
+  // at all — those sink to the bottom, tie-broken alphabetically so the
+  // order is still deterministic rather than depending on array order.
+  results.sort((a, b) => {
+    if (a.lastActivityAt && b.lastActivityAt) {
+      return b.lastActivityAt.localeCompare(a.lastActivityAt);
+    }
+    if (a.lastActivityAt) return -1;
+    if (b.lastActivityAt) return 1;
+    return a.username.localeCompare(b.username);
+  });
+
+  return results.map((friend) => ({
+    friendId: friend.friendId,
+    username: friend.username,
+    avatarUrl: friend.avatarUrl,
+    balance: friend.balance,
+  }));
 }
