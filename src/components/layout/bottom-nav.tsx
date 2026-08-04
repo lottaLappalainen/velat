@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Search, Bell, User, type LucideIcon } from "lucide-react"
+import { Home, User, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -13,10 +13,10 @@ type NavItem = {
 }
 
 // Adjust freely — this is the single place that defines the app's bottom nav.
+// Friend search/requests live on the Profile page, not a separate tab — see
+// docs/tasks/structure.md.
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/explore", label: "Explore", icon: Search },
-  { href: "/notifications", label: "Alerts", icon: Bell },
   { href: "/profile", label: "Profile", icon: User },
 ]
 
