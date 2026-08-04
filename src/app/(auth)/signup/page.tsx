@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,12 @@ import {
 } from "@/components/ui/card";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [confirmationSent, setConfirmationSent] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,45 +38,40 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { username: trimmedUsername },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (signUpError) {
         setError(signUpError.message || "Something went wrong. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Email confirmation is off (Supabase dashboard: Authentication ->
+      // Sign In / Providers -> Email -> "Confirm email" disabled), so
+      // signUp returns an active session immediately — no separate
+      // "check your email" step, straight into the app.
+      if (!data.session) {
+        setError(
+          "Account created, but email confirmation is still required — disable " +
+            "\"Confirm email\" in the Supabase dashboard (Authentication > Sign In / Providers > Email)."
+        );
+        setIsSubmitting(false);
         return;
       }
     } catch {
       setError("Something went wrong. Please try again.");
-      return;
-    } finally {
       setIsSubmitting(false);
+      return;
     }
 
-    setConfirmationSent(true);
-  }
-
-  if (confirmationSent) {
-    return (
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Check your email</CardTitle>
-          <CardDescription>
-            We sent a confirmation link to {email}. Follow it to activate your account, then log in.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link href="/login" className="text-sm font-medium text-foreground underline underline-offset-2">
-            Back to log in
-          </Link>
-        </CardContent>
-      </Card>
-    );
+    router.push("/");
+    router.refresh();
   }
 
   return (
