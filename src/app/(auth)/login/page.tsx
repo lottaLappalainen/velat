@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import {
   Card,
   CardHeader,
@@ -61,8 +61,8 @@ export default function LoginPage() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
+          <Field>
+            <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
               name="email"
@@ -72,10 +72,10 @@ export default function LoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
-          </div>
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Password</Label>
+          <Field>
+            <FieldLabel htmlFor="password">Password</FieldLabel>
             <Input
               id="password"
               name="password"
@@ -85,9 +85,9 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
-          </div>
+          </Field>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          <FieldError>{error}</FieldError>
 
           <Button type="submit" disabled={isSubmitting} className="mt-1">
             {isSubmitting ? "Logging in…" : "Log in"}

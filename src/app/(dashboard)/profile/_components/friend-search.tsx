@@ -134,7 +134,7 @@ export function FriendSearch({ currentUserId }: { currentUserId: string }) {
               <Button
                 type="button"
                 size="sm"
-                variant={result.relationship === "none" ? "default" : "outline"}
+                variant={result.relationship === "none" ? "primary" : "secondary"}
                 disabled={result.relationship !== "none" || sendingId === result.id}
                 onClick={() => handleSendRequest(result.id)}
               >

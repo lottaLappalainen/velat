@@ -3,8 +3,8 @@
 import { useState, type FormEvent } from "react";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { FieldLabel, FieldError } from "@/components/ui/field";
 import { updateUsername } from "../actions";
 
 // Client-side normalization is formatting only (lowercase, no spaces) — the
@@ -48,7 +48,7 @@ export function UsernameForm({ currentUsername }: { currentUsername: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-1.5">
-      <Label htmlFor="username">Username</Label>
+      <FieldLabel htmlFor="username">Username</FieldLabel>
       <div className="flex items-center gap-2">
         <Input
           id="username"
@@ -65,7 +65,7 @@ export function UsernameForm({ currentUsername }: { currentUsername: string }) {
           {isSaving ? "Saving…" : "Save"}
         </Button>
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      <FieldError className="text-xs">{error}</FieldError>
       {saved && !error && <p className="text-xs text-muted-foreground">Saved.</p>}
     </form>
   );

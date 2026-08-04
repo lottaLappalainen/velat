@@ -18,8 +18,8 @@ type NavItem = {
 // distinct from Home (totals + per-friend summary) — see
 // docs/tasks/transactions-ui.md.
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Home", icon: Home },
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { href: "/", label: "Home", icon: Home },
   { href: "/profile", label: "Profile", icon: User },
 ]
 

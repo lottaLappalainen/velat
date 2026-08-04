@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent } from "react";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field";
 import { updateAvatar } from "../actions";
 
 const MAX_DIMENSION = 512;
@@ -92,7 +93,7 @@ export function AvatarUploader({
       <div className="flex flex-col gap-1">
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => inputRef.current?.click()}
           disabled={isUploading}
@@ -100,7 +101,7 @@ export function AvatarUploader({
         >
           {isUploading ? "Uploading…" : "Change photo"}
         </Button>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        <FieldError className="text-xs">{error}</FieldError>
       </div>
 
       <input

@@ -4,19 +4,23 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { PresetPicker } from "@/app/(dashboard)/_components/preset-picker";
+import { AmountInput } from "@/app/(dashboard)/_components/amount-input";
 import { createTransaction, savePreset, type Direction } from "@/app/(dashboard)/_lib/transaction-actions";
 import type { Preset } from "@/app/(dashboard)/_lib/get-presets";
+import { evaluateAmountExpression } from "@/lib/calc";
 import { FriendPicker, type FriendOption } from "./friend-picker";
 
 // Same name/amount/direction fields as friends/[friendId]'s debt-form.tsx,
 // plus a friend picker since there's no friend already implied by the URL
 // here. Not factored into a shared fields component — docs/tasks/
 // transactions-ui.md's "Shared code" list only calls out the picker/preset/
-// row pieces, not the form itself.
+// row pieces, not the form itself. All styling comes from shared ui/
+// primitives — see docs/DESIGN_SYSTEM.md.
 export function AddTransactionForm({ friends, presets }: { friends: FriendOption[]; presets: Preset[] }) {
   const router = useRouter();
   const [friendId, setFriendId] = useState<string | null>(null);
@@ -31,7 +35,7 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
 
   function handlePresetSelect(preset: Preset) {
     setName(preset.name);
-    setAmount(String(preset.amount));
+    setAmount(String(preset.amount).replace(".", ","));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -44,13 +48,13 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
     }
 
     const trimmedName = name.trim();
-    const parsedAmount = Number(amount);
+    const parsedAmount = evaluateAmountExpression(amount);
 
     if (!trimmedName) {
       setError("Name is required.");
       return;
     }
-    if (!(parsedAmount > 0)) {
+    if (parsedAmount === null || !(parsedAmount > 0)) {
       setError("Amount must be greater than zero.");
       return;
     }
@@ -96,74 +100,38 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
 
       <PresetPicker presets={presets} onSelect={handlePresetSelect} />
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="global-transaction-name">Name</Label>
+      <Field>
+        <FieldLabel htmlFor="global-transaction-name">Name</FieldLabel>
         <Input
           id="global-transaction-name"
           value={name}
           onChange={(event) => setName(event.target.value)}
           required
         />
-      </div>
+      </Field>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="global-transaction-amount">Amount</Label>
-        <Input
-          id="global-transaction-amount"
-          type="number"
-          inputMode="decimal"
-          min="0.01"
-          step="0.01"
-          value={amount}
-          onChange={(event) => setAmount(event.target.value)}
-          required
-        />
-      </div>
+      <Field>
+        <FieldLabel>Amount</FieldLabel>
+        <AmountInput value={amount} onChange={setAmount} />
+      </Field>
 
-      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Direction">
-        <button
-          type="button"
-          role="radio"
-          aria-checked={direction === "owed_to_me"}
-          onClick={() => setDirection("owed_to_me")}
-          disabled={!friendId}
-          className={cn(
-            "rounded-md border px-2 py-2 text-sm font-medium transition-colors disabled:opacity-50",
-            direction === "owed_to_me"
-              ? "border-success bg-success/10 text-success"
-              : "border-border text-muted-foreground"
-          )}
-        >
-          + {friendUsername} owes me
-        </button>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={direction === "i_owe"}
-          onClick={() => setDirection("i_owe")}
-          disabled={!friendId}
-          className={cn(
-            "rounded-md border px-2 py-2 text-sm font-medium transition-colors disabled:opacity-50",
-            direction === "i_owe"
-              ? "border-destructive bg-destructive/10 text-destructive"
-              : "border-border text-muted-foreground"
-          )}
-        >
-          − I owe {friendUsername}
-        </button>
-      </div>
+      <SegmentedControl
+        ariaLabel="Direction"
+        value={direction}
+        onChange={setDirection}
+        disabled={!friendId}
+        options={[
+          { value: "owed_to_me", label: `+ ${friendUsername} owes me`, tone: "success" },
+          { value: "i_owe", label: `− I owe ${friendUsername}`, tone: "destructive" },
+        ]}
+      />
 
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={saveAsPreset}
-          onChange={(event) => setSaveAsPreset(event.target.checked)}
-          className="size-4 rounded border-input"
-        />
-        Save as preset
-      </label>
+      <Field orientation="horizontal">
+        <Checkbox id="global-save-as-preset" checked={saveAsPreset} onCheckedChange={setSaveAsPreset} />
+        <FieldLabel htmlFor="global-save-as-preset">Save as preset</FieldLabel>
+      </Field>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      <FieldError>{error}</FieldError>
 
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Adding…" : "Add transaction"}

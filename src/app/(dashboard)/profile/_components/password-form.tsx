@@ -3,8 +3,8 @@
 import { useState, type FormEvent } from "react";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { updatePassword } from "../actions";
 
 export function PasswordForm() {
@@ -46,8 +46,8 @@ export function PasswordForm() {
     <section className="flex flex-col gap-3">
       <h2 className="text-sm font-semibold text-foreground">Password</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="new-password">New password</Label>
+        <Field>
+          <FieldLabel htmlFor="new-password">New password</FieldLabel>
           <Input
             id="new-password"
             type="password"
@@ -57,9 +57,9 @@ export function PasswordForm() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="confirm-password">Confirm new password</Label>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="confirm-password">Confirm new password</FieldLabel>
           <Input
             id="confirm-password"
             type="password"
@@ -69,8 +69,8 @@ export function PasswordForm() {
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
           />
-        </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        </Field>
+        <FieldError>{error}</FieldError>
         {success && <p className="text-sm text-muted-foreground">Password updated.</p>}
         <Button type="submit" size="sm" disabled={isSaving} className="self-start">
           {isSaving ? "Saving…" : "Update password"}

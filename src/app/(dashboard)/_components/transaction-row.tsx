@@ -1,4 +1,6 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { toneTextClass } from "@/components/ui/callout";
+import { cn } from "@/lib/utils";
 import { formatMoney, formatFinnishDateTime } from "@/lib/format";
 
 export type TransactionRowData = {
@@ -40,9 +42,10 @@ export function TransactionRow({ transaction }: { transaction: TransactionRowDat
       </div>
 
       <span
-        className={`shrink-0 text-sm font-semibold ${
-          transaction.isOwedToViewer ? "text-success" : "text-destructive"
-        }`}
+        className={cn(
+          "shrink-0 text-sm font-semibold",
+          toneTextClass(transaction.isOwedToViewer ? "success" : "destructive")
+        )}
       >
         {transaction.isOwedToViewer ? "+" : "−"} {formatMoney(transaction.amount, transaction.currency)}
       </span>

@@ -1,3 +1,5 @@
+import type { Tone } from "@/components/ui/callout";
+
 // Shared formatting + sign-convention helpers for the debt ledger. See
 // docs/tasks/debt-ledger.md, "Core principle: store facts, never store +/-"
 // and "Finnish formatting" — never format ad hoc in a component.
@@ -50,4 +52,13 @@ export function getViewerRelativeBalance(
   const amount = Math.abs(balance.net_amount);
 
   return viewerIsOwed ? { status: "owed_to_viewer", amount } : { status: "owed_by_viewer", amount };
+}
+
+// The one place a balance status maps to a visual tone — used by every
+// component that colors a balance (Callout boxes, per-row text). See
+// docs/DESIGN_SYSTEM.md.
+export function getBalanceTone(status: ViewerRelativeBalance["status"]): Tone {
+  if (status === "owed_to_viewer") return "success";
+  if (status === "owed_by_viewer") return "destructive";
+  return "muted";
 }

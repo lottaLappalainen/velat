@@ -45,7 +45,7 @@ export function FriendRequestInbox({ requests }: { requests: IncomingRequest[] }
                   await respondToFriendRequest(request.id, false);
                 }}
               >
-                <Button type="submit" size="sm" variant="outline">
+                <Button type="submit" size="sm" variant="secondary">
                   Decline
                 </Button>
               </form>

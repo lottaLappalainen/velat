@@ -38,7 +38,7 @@ export function FriendPicker({
           <AvatarFallback>{selected.username[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
         <span className="flex-1 text-sm font-medium text-foreground">{selected.username}</span>
-        <Button type="button" variant="ghost" size="sm" onClick={() => onSelect(null)}>
+        <Button type="button" variant="tertiary" size="sm" onClick={() => onSelect(null)}>
           Change
         </Button>
       </div>

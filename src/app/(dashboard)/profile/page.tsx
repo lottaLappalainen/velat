@@ -59,7 +59,7 @@ export default async function ProfilePage() {
       <FriendRequestInbox requests={incomingRequests} />
 
       <form action={logout}>
-        <Button type="submit" variant="outline" size="sm">
+        <Button type="submit" variant="secondary" size="sm">
           Log out
         </Button>
       </form>

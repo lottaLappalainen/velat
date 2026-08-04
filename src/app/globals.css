@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -148,5 +148,19 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Gentle emoji bob for TotalsHeader (see docs/tasks/homepage-ui.md, "Totals
+   header" — ambient motion, not attention-grabbing). Used via the arbitrary
+   `animate-[float_2.5s_ease-in-out_infinite]` utility; always paired with
+   `motion-reduce:animate-none` at the call site. */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
   }
 }

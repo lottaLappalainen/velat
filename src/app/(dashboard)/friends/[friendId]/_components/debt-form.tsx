@@ -4,16 +4,20 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { PresetPicker } from "@/app/(dashboard)/_components/preset-picker";
+import { AmountInput } from "@/app/(dashboard)/_components/amount-input";
 import { createTransaction, savePreset, type Direction } from "@/app/(dashboard)/_lib/transaction-actions";
 import type { Preset } from "@/app/(dashboard)/_lib/get-presets";
+import { evaluateAmountExpression } from "@/lib/calc";
 
 // Name/amount/direction fields per docs/tasks/debt-ledger.md — the segmented
-// control has no default selection and pairs color + glyph + text together
-// (not color alone), so direction can never be submitted ambiguously.
+// control has no default selection, so direction can never be submitted
+// ambiguously. All styling here comes from shared ui/ primitives — see
+// docs/DESIGN_SYSTEM.md.
 export function DebtForm({
   friendId,
   friendUsername,
@@ -33,7 +37,7 @@ export function DebtForm({
 
   function handlePresetSelect(preset: Preset) {
     setName(preset.name);
-    setAmount(String(preset.amount));
+    setAmount(String(preset.amount).replace(".", ","));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -41,13 +45,13 @@ export function DebtForm({
     setError(null);
 
     const trimmedName = name.trim();
-    const parsedAmount = Number(amount);
+    const parsedAmount = evaluateAmountExpression(amount);
 
     if (!trimmedName) {
       setError("Name is required.");
       return;
     }
-    if (!(parsedAmount > 0)) {
+    if (parsedAmount === null || !(parsedAmount > 0)) {
       setError("Amount must be greater than zero.");
       return;
     }
@@ -90,72 +94,32 @@ export function DebtForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border border-border p-4">
       <PresetPicker presets={presets} onSelect={handlePresetSelect} />
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="transaction-name">Name</Label>
-        <Input
-          id="transaction-name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          required
-        />
-      </div>
+      <Field>
+        <FieldLabel htmlFor="transaction-name">Name</FieldLabel>
+        <Input id="transaction-name" value={name} onChange={(event) => setName(event.target.value)} required />
+      </Field>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="transaction-amount">Amount</Label>
-        <Input
-          id="transaction-amount"
-          type="number"
-          inputMode="decimal"
-          min="0.01"
-          step="0.01"
-          value={amount}
-          onChange={(event) => setAmount(event.target.value)}
-          required
-        />
-      </div>
+      <Field>
+        <FieldLabel>Amount</FieldLabel>
+        <AmountInput value={amount} onChange={setAmount} />
+      </Field>
 
-      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Direction">
-        <button
-          type="button"
-          role="radio"
-          aria-checked={direction === "owed_to_me"}
-          onClick={() => setDirection("owed_to_me")}
-          className={cn(
-            "rounded-md border px-2 py-2 text-sm font-medium transition-colors",
-            direction === "owed_to_me"
-              ? "border-success bg-success/10 text-success"
-              : "border-border text-muted-foreground"
-          )}
-        >
-          + {friendUsername} owes me
-        </button>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={direction === "i_owe"}
-          onClick={() => setDirection("i_owe")}
-          className={cn(
-            "rounded-md border px-2 py-2 text-sm font-medium transition-colors",
-            direction === "i_owe"
-              ? "border-destructive bg-destructive/10 text-destructive"
-              : "border-border text-muted-foreground"
-          )}
-        >
-          − I owe {friendUsername}
-        </button>
-      </div>
+      <SegmentedControl
+        ariaLabel="Direction"
+        value={direction}
+        onChange={setDirection}
+        options={[
+          { value: "owed_to_me", label: `+ ${friendUsername} owes me`, tone: "success" },
+          { value: "i_owe", label: `− I owe ${friendUsername}`, tone: "destructive" },
+        ]}
+      />
 
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={saveAsPreset}
-          onChange={(event) => setSaveAsPreset(event.target.checked)}
-          className="size-4 rounded border-input"
-        />
-        Save as preset
-      </label>
+      <Field orientation="horizontal">
+        <Checkbox id="save-as-preset" checked={saveAsPreset} onCheckedChange={setSaveAsPreset} />
+        <FieldLabel htmlFor="save-as-preset">Save as preset</FieldLabel>
+      </Field>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      <FieldError>{error}</FieldError>
 
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Adding…" : "Add transaction"}

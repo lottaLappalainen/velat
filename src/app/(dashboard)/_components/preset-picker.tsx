@@ -49,7 +49,7 @@ export function PresetPicker({
           </button>
           <Button
             type="button"
-            variant="ghost"
+            variant="tertiary"
             size="icon-xs"
             aria-label={`Delete preset ${preset.name}`}
             disabled={deletingId === preset.id}
