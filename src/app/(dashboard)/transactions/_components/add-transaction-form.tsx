@@ -9,8 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { PresetPicker } from "@/app/(dashboard)/_components/preset-picker";
+import { CategoryPicker } from "@/app/(dashboard)/_components/category-picker";
 import { AmountInput } from "@/app/(dashboard)/_components/amount-input";
 import { createTransaction, savePreset, type Direction } from "@/app/(dashboard)/_lib/transaction-actions";
+import { resolveParticipants } from "@/app/(dashboard)/_lib/direction";
 import type { Preset } from "@/app/(dashboard)/_lib/get-presets";
 import { evaluateAmountExpression } from "@/lib/calc";
 import { FriendPicker, type FriendOption } from "./friend-picker";
@@ -21,17 +23,42 @@ import { FriendPicker, type FriendOption } from "./friend-picker";
 // transactions-ui.md's "Shared code" list only calls out the picker/preset/
 // row pieces, not the form itself. All styling comes from shared ui/
 // primitives — see docs/DESIGN_SYSTEM.md.
-export function AddTransactionForm({ friends, presets }: { friends: FriendOption[]; presets: Preset[] }) {
+export function AddTransactionForm({
+  friends,
+  presets,
+  viewerId,
+}: {
+  friends: FriendOption[];
+  presets: Preset[];
+  viewerId: string;
+}) {
   const router = useRouter();
   const [friendId, setFriendId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<Direction | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [saveAsPreset, setSaveAsPreset] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const friendUsername = friends.find((friend) => friend.id === friendId)?.username ?? "them";
+
+  // Only resolvable once both a friend and a direction are chosen — see
+  // docs/tasks/categories-dashboard.md, "whose category is it?"
+  const debtorId =
+    friendId && direction ? resolveParticipants(viewerId, friendId, direction).debtorId : null;
+
+  function handleFriendChange(next: string | null) {
+    setFriendId(next);
+    setDirection(null);
+    setCategoryId(null);
+  }
+
+  function handleDirectionChange(next: Direction) {
+    setDirection(next);
+    setCategoryId(null);
+  }
 
   function handlePresetSelect(preset: Preset) {
     setName(preset.name);
@@ -62,6 +89,10 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
       setError("Choose a direction.");
       return;
     }
+    if (!categoryId) {
+      setError("Choose a category.");
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -70,6 +101,7 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
         name: trimmedName,
         amount: parsedAmount,
         direction,
+        categoryId,
       });
 
       if (result.error) {
@@ -84,6 +116,7 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
       setName("");
       setAmount("");
       setDirection(null);
+      setCategoryId(null);
       setSaveAsPreset(false);
       setFriendId(null);
       router.refresh();
@@ -96,7 +129,7 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-lg border border-border p-4">
-      <FriendPicker friends={friends} selectedFriendId={friendId} onSelect={setFriendId} />
+      <FriendPicker friends={friends} selectedFriendId={friendId} onSelect={handleFriendChange} />
 
       <PresetPicker presets={presets} onSelect={handlePresetSelect} />
 
@@ -118,13 +151,15 @@ export function AddTransactionForm({ friends, presets }: { friends: FriendOption
       <SegmentedControl
         ariaLabel="Direction"
         value={direction}
-        onChange={setDirection}
+        onChange={handleDirectionChange}
         disabled={!friendId}
         options={[
           { value: "owed_to_me", label: `+ ${friendUsername} owes me`, tone: "success" },
           { value: "i_owe", label: `− I owe ${friendUsername}`, tone: "destructive" },
         ]}
       />
+
+      <CategoryPicker debtorId={debtorId} selectedCategoryId={categoryId} onSelect={setCategoryId} />
 
       <Field orientation="horizontal">
         <Checkbox id="global-save-as-preset" checked={saveAsPreset} onCheckedChange={setSaveAsPreset} />

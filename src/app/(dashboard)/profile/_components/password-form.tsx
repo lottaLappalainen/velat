@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { ChevronDown } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { updatePassword } from "../actions";
 
 export function PasswordForm() {
@@ -43,39 +45,44 @@ export function PasswordForm() {
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold text-foreground">Password</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <Field>
-          <FieldLabel htmlFor="new-password">New password</FieldLabel>
-          <Input
-            id="new-password"
-            type="password"
-            autoComplete="new-password"
-            minLength={10}
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="confirm-password">Confirm new password</FieldLabel>
-          <Input
-            id="confirm-password"
-            type="password"
-            autoComplete="new-password"
-            minLength={10}
-            required
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-          />
-        </Field>
-        <FieldError>{error}</FieldError>
-        {success && <p className="text-sm text-muted-foreground">Password updated.</p>}
-        <Button type="submit" size="sm" disabled={isSaving} className="self-start">
-          {isSaving ? "Saving…" : "Update password"}
-        </Button>
-      </form>
-    </section>
+    <Collapsible defaultOpen={false} className="flex flex-col gap-3">
+      <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 text-left">
+        <h2 className="text-sm font-semibold text-foreground">Password</h2>
+        <ChevronDown className="size-4 text-muted-foreground transition-transform group-data-panel-open:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <Field>
+            <FieldLabel htmlFor="new-password">New password</FieldLabel>
+            <Input
+              id="new-password"
+              type="password"
+              autoComplete="new-password"
+              minLength={10}
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="confirm-password">Confirm new password</FieldLabel>
+            <Input
+              id="confirm-password"
+              type="password"
+              autoComplete="new-password"
+              minLength={10}
+              required
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+          </Field>
+          <FieldError>{error}</FieldError>
+          {success && <p className="text-sm text-muted-foreground">Password updated.</p>}
+          <Button type="submit" size="sm" disabled={isSaving} className="self-start">
+            {isSaving ? "Saving…" : "Update password"}
+          </Button>
+        </form>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

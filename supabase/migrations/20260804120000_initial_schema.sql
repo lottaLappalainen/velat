@@ -49,7 +49,27 @@ create unique index one_friendship_per_pair on friendships
   (least(requester_id, addressee_id), greatest(requester_id, addressee_id));
 
 -- =========================================================================
--- 3. transactions — the log (docs/tasks/debt-ledger.md)
+-- 3. categories — required on every transaction (docs/tasks/categories-dashboard.md)
+-- =========================================================================
+-- Belongs to owner_id (the *debtor* on any transaction using it, not
+-- necessarily whoever created it — see categories-dashboard.md, "whose
+-- category is it?"). created_by is an audit column: a friend can create one
+-- on the owner's behalf, mirroring how transactions itself already lets
+-- either participant act.
+create table categories (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references profiles(id),
+  name text not null check (char_length(trim(name)) > 0),
+  created_by uuid not null references profiles(id),
+  created_at timestamptz not null default now()
+);
+
+-- case-insensitive per-owner uniqueness — two categories both named "Food"
+-- (or "food") would silently split one person's stats across two rows
+create unique index categories_owner_name_unique_idx on categories (owner_id, lower(name));
+
+-- =========================================================================
+-- 4. transactions — the log (docs/tasks/debt-ledger.md)
 -- =========================================================================
 create table transactions (
   id uuid primary key default gen_random_uuid(),
@@ -58,6 +78,7 @@ create table transactions (
   amount numeric(12,2) not null check (amount > 0),
   currency text not null default 'EUR',
   name text not null check (char_length(trim(name)) > 0),  -- e.g. "Pizza"
+  category_id uuid not null references categories(id),  -- must belong to debtor_id — enforced in RLS below
   created_by uuid not null references profiles(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -67,6 +88,11 @@ create table transactions (
 
 create index transactions_pair_idx on transactions
   (least(creditor_id, debtor_id), greatest(creditor_id, debtor_id), created_at desc);
+
+-- accelerates the Dashboard's "my spending" query (single-user, date-ranged)
+-- — a different access pattern than transactions_pair_idx above, which is
+-- built for two-person ledger lookups
+create index transactions_debtor_idx on transactions (debtor_id, created_at) where deleted_at is null;
 
 create function set_updated_at() returns trigger as $$
 begin
@@ -80,7 +106,7 @@ create trigger transactions_set_updated_at
   for each row execute function set_updated_at();
 
 -- =========================================================================
--- 4. balances — the derived, netted total (docs/tasks/debt-ledger.md)
+-- 5. balances — the derived, netted total (docs/tasks/debt-ledger.md)
 -- =========================================================================
 create view balances as
 select
@@ -97,7 +123,7 @@ group by 1, 2;
 -- application code translates user_a/user_b into "you"/"friend" before display
 
 -- =========================================================================
--- 5. transaction_presets — personal quick-fill shortcuts (docs/tasks/debt-ledger.md, "Saved presets")
+-- 6. transaction_presets — personal quick-fill shortcuts (docs/tasks/debt-ledger.md, "Saved presets")
 -- =========================================================================
 create table transaction_presets (
   id uuid primary key default gen_random_uuid(),
@@ -111,10 +137,11 @@ create table transaction_presets (
 create index transaction_presets_owner_idx on transaction_presets (owner_id, created_at desc);
 
 -- =========================================================================
--- 6. Row Level Security — default deny, then only these policies
+-- 7. Row Level Security — default deny, then only these policies
 -- =========================================================================
 alter table profiles enable row level security;
 alter table friendships enable row level security;
+alter table categories enable row level security;
 alter table transactions enable row level security;
 alter table transaction_presets enable row level security;
 
@@ -132,8 +159,38 @@ create policy "friendships created by requester" on friendships
 create policy "friendships updated by participants" on friendships
   for update using (auth.uid() in (requester_id, addressee_id));
 
+-- categories: visible/insertable by the owner OR an accepted friend of the
+-- owner (not owner-only, unlike presets) — see categories-dashboard.md,
+-- "whose category is it?" No update/delete policy: no rename/delete in v1,
+-- enforced here, not just missing from the UI.
+create policy "categories visible to owner or accepted friend" on categories
+  for select using (
+    auth.uid() = owner_id
+    or exists (
+      select 1 from friendships f
+      where f.status = 'accepted'
+        and least(f.requester_id, f.addressee_id) = least(owner_id, auth.uid())
+        and greatest(f.requester_id, f.addressee_id) = greatest(owner_id, auth.uid())
+    )
+  );
+create policy "categories insertable by owner or accepted friend" on categories
+  for insert with check (
+    created_by = auth.uid()
+    and (
+      auth.uid() = owner_id
+      or exists (
+        select 1 from friendships f
+        where f.status = 'accepted'
+          and least(f.requester_id, f.addressee_id) = least(owner_id, auth.uid())
+          and greatest(f.requester_id, f.addressee_id) = greatest(owner_id, auth.uid())
+      )
+    )
+  );
+
 -- transactions: only the two people on the entry can see it; either can log
--- one involving themselves, but only if they're accepted friends
+-- one involving themselves, but only if they're accepted friends, and only
+-- with a category that actually belongs to the debtor (see
+-- categories-dashboard.md)
 create policy "transactions visible to participants" on transactions
   for select using (auth.uid() in (creditor_id, debtor_id));
 create policy "transactions created by a participant who is a friend" on transactions
@@ -146,6 +203,7 @@ create policy "transactions created by a participant who is a friend" on transac
         and least(f.requester_id, f.addressee_id) = least(creditor_id, debtor_id)
         and greatest(f.requester_id, f.addressee_id) = greatest(creditor_id, debtor_id)
     )
+    and exists (select 1 from categories c where c.id = category_id and c.owner_id = debtor_id)
   );
 create policy "transactions editable by participants" on transactions
   for update using (auth.uid() in (creditor_id, debtor_id));
@@ -162,7 +220,7 @@ create policy "presets deletable by owner" on transaction_presets
   for delete using (auth.uid() = owner_id);
 
 -- =========================================================================
--- 7. Storage — avatar photos (docs/tasks/authorization.md)
+-- 8. Storage — avatar photos (docs/tasks/authorization.md)
 -- =========================================================================
 insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)

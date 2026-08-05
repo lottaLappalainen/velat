@@ -64,7 +64,7 @@ export default async function FriendPage({
 
       <BalanceHeader friendUsername={friendUsername} viewerId={viewerId} balanceRow={balanceRow ?? null} />
 
-      <DebtForm friendId={friendId} friendUsername={friendUsername} presets={presets} />
+      <DebtForm friendId={friendId} friendUsername={friendUsername} viewerId={viewerId} presets={presets} />
 
       <DebtList transactions={transactions ?? []} viewerId={viewerId} friendUsername={friendUsername} />
     </div>
