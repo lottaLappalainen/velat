@@ -2,6 +2,11 @@
 -- Source of truth for each block: docs/tasks/authorization.md and docs/tasks/debt-ledger.md.
 -- Run this against a fresh Supabase project via the SQL editor, or `supabase db push`
 -- once the project is linked (see README for setup).
+--
+-- APPLIED — this file represents history now, not a draft. It has already been run against
+-- the live project (see docs/PLAN.md's "Live project status"). Any further schema change is a
+-- new migration file, never an edit here — see supabase/migrations/20260805000000_categories.sql
+-- for the categories addition, applied as a proper incremental migration for exactly this reason.
 
 -- =========================================================================
 -- 1. profiles — 1:1 with auth.users (docs/tasks/authorization.md)
