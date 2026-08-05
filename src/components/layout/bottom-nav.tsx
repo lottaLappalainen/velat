@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ArrowLeftRight, User, type LucideIcon } from "lucide-react"
+import { Home, ArrowLeftRight, BarChart3, User, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -16,10 +16,13 @@ type NavItem = {
 // Friend search/requests live on the Profile page, not a separate tab — see
 // docs/tasks/structure.md. Transactions is a global cross-friend log,
 // distinct from Home (totals + per-friend summary) — see
-// docs/tasks/transactions-ui.md.
+// docs/tasks/transactions-ui.md. Dashboard (spending by category) is its own
+// tab rather than a link from Home — see docs/tasks/categories-dashboard.md,
+// "Nav placement."
 const NAV_ITEMS: NavItem[] = [
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/", label: "Home", icon: Home },
+  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/profile", label: "Profile", icon: User },
 ]
 
@@ -30,7 +33,7 @@ function BottomNav() {
     <nav
       data-slot="bottom-nav"
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-card/80"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-backdrop-filter:bg-card/80"
     >
       <ul className="mx-auto flex h-16 max-w-md items-stretch justify-around">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {

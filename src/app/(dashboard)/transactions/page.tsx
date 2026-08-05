@@ -85,7 +85,7 @@ export default async function TransactionsPage() {
           </Link>
         </div>
       ) : (
-        <AddTransactionForm friends={friends} presets={presets} />
+        <AddTransactionForm friends={friends} presets={presets} viewerId={viewerId} />
       )}
 
       {rows.length === 0 ? (

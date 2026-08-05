@@ -6,6 +6,11 @@ import { resolveParticipants, type Direction } from "./direction";
 
 type ActionResult = { error: string | null };
 
+// Re-exported so existing call sites (`debt-form.tsx`, `add-transaction-
+// form.tsx`) can keep importing it from here — the value-level helper moved
+// to ./direction because a "use server" file can only export async Server
+// Actions, but category-picker.tsx (a client component) needs the plain
+// function too.
 export type { Direction };
 
 function revalidateLedgerPaths(friendId: string) {
@@ -16,11 +21,12 @@ function revalidateLedgerPaths(friendId: string) {
 
 export async function createTransaction(
   friendId: string,
-  input: { name: string; amount: number; direction: Direction }
+  input: { name: string; amount: number; direction: Direction; categoryId: string }
 ): Promise<ActionResult> {
   const trimmedName = input.name.trim();
   if (!trimmedName) return { error: "Name is required." };
   if (!(input.amount > 0)) return { error: "Amount must be greater than zero." };
+  if (!input.categoryId) return { error: "Choose a category." };
 
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
@@ -34,13 +40,16 @@ export async function createTransaction(
     debtor_id: debtorId,
     amount: input.amount,
     name: trimmedName,
+    category_id: input.categoryId,
     created_by: viewerId,
   });
 
   if (error) {
-    // Most likely cause: the RLS insert policy's friendship check failed —
-    // i.e. you're no longer (or never were) friends with this person.
-    return { error: "Couldn't log transaction. Are you still friends?" };
+    // Most likely causes: the RLS insert policy's friendship check failed
+    // (no longer, or never were, friends with this person), or category_id
+    // didn't actually belong to the debtor (e.g. direction changed client-
+    // side after a category was picked, without clearing the selection).
+    return { error: "Couldn't log transaction. Are you still friends, and is the category valid?" };
   }
 
   revalidateLedgerPaths(friendId);

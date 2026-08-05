@@ -1,3 +1,8 @@
+// Pulled out of transaction-actions.ts because a "use server" file can only
+// export async Server Actions — not a plain pure function like this one,
+// which category-picker.tsx (a client component) also needs, to resolve who
+// the debtor is *before* submitting. See docs/tasks/categories-dashboard.md,
+// "whose category is it?"
 export type Direction = "owed_to_me" | "i_owe";
 
 // Resolves the form's viewer-relative +/- choice into the storage-level
