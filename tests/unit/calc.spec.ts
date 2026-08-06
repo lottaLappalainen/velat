@@ -26,6 +26,8 @@ describe("evaluateAmountExpression", () => {
     ["5−2", 3], // unicode minus sign, as displayed by the keypad
     ["0,1+0,2", 0.3], // floating-point rounding
     ["12,50+8×2-1÷2", 28], // mixed precedence
+    ["0", 0], // zero is a valid amount, not treated as "not ready to submit"
+    ["5-5", 0],
   ])("evaluates %s to %s", (input, expected) => {
     expect(evaluateAmountExpression(input)).toBe(expected);
   });

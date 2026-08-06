@@ -67,8 +67,8 @@ export function DebtForm({
       setError("Name is required.");
       return;
     }
-    if (parsedAmount === null || !(parsedAmount > 0)) {
-      setError("Amount must be greater than zero.");
+    if (parsedAmount === null || parsedAmount < 0) {
+      setError("Amount can't be negative.");
       return;
     }
     if (!direction) {

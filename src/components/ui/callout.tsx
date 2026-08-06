@@ -28,6 +28,19 @@ export function toneGlowClass(tone: Tone): string {
   return TONE_GLOW_CLASS[tone];
 }
 
+// A diagonal wash from the tone color down to transparent, layered over
+// Callout's own flat bg-*/10 — for a bigger, hero-style box that wants some
+// depth instead of a flat tint (used by the home page's totals tiles).
+const TONE_GRADIENT_CLASS: Record<Tone, string> = {
+  success: "bg-gradient-to-br from-success/25 via-success/10 to-transparent",
+  destructive: "bg-gradient-to-br from-destructive/25 via-destructive/10 to-transparent",
+  muted: "bg-gradient-to-br from-muted to-transparent",
+};
+
+export function toneGradientClass(tone: Tone): string {
+  return TONE_GRADIENT_CLASS[tone];
+}
+
 const calloutVariants = cva("rounded-lg p-4 text-center", {
   variants: {
     tone: {

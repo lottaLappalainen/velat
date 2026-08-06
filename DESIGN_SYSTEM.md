@@ -60,6 +60,8 @@ balance or status needs color:
   child that must stay neutral sets its own `text-muted-foreground` to override.
 - `toneGlowClass(tone)` — a stronger decorative tint for things like a pulsing background glow, deliberately a
   separate opacity scale from `Callout`'s own `bg-*/10` (used by the home page's animated totals).
+- `toneGradientClass(tone)` — a diagonal tone-colored gradient wash, for a bigger hero-style box that wants
+  depth instead of a flat tint (used by the home page's totals tiles).
 - `getBalanceTone(status)` in `src/lib/format.ts` — the one place a `ViewerRelativeBalance` status
   (`owed_to_viewer` / `owed_by_viewer` / `settled`) maps to a `Tone`. Never re-derive this mapping locally —
   see `friend-row.tsx` / `transaction-row.tsx` / `balance-header.tsx` for the pattern.

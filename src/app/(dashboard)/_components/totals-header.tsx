@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Callout, toneGlowClass, type Tone } from "@/components/ui/callout";
+import { Callout, toneGlowClass, toneGradientClass, type Tone } from "@/components/ui/callout";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { FriendBalance } from "../_lib/get-friend-balances";
@@ -75,7 +75,16 @@ function TotalTile({
   const isZero = amount === 0;
 
   return (
-    <Callout tone={tone} className="relative overflow-hidden py-7">
+    <Callout
+      tone={tone}
+      className={cn(
+        "relative overflow-hidden py-7 transition-all duration-300 ease-out",
+        toneGradientClass(tone),
+        "hover:scale-[1.02] hover:shadow-lg",
+        tone === "success" ? "hover:shadow-success/20" : "hover:shadow-destructive/20",
+        "motion-reduce:transition-none motion-reduce:hover:scale-100"
+      )}
+    >
       {!isZero && (
         <div
           aria-hidden

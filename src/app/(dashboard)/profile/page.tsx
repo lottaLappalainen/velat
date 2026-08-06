@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { logout } from "../actions";
 import { getFriends, getSentRequests, getIncomingRequests } from "./_lib/get-friendships";
+import { getOwnCategories } from "./_lib/get-own-categories";
+import { getPresets } from "../_lib/get-presets";
 import { AvatarUploader } from "./_components/avatar-uploader";
 import { UsernameForm } from "./_components/username-form";
 import { PasswordForm } from "./_components/password-form";
@@ -11,6 +13,8 @@ import { FriendsList } from "./_components/friends-list";
 import { FriendSearch } from "./_components/friend-search";
 import { SentRequestList } from "./_components/sent-request-list";
 import { FriendRequestInbox } from "./_components/friend-request-inbox";
+import { PresetManager } from "./_components/preset-manager";
+import { CategoryManager } from "./_components/category-manager";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -30,10 +34,12 @@ export default async function ProfilePage() {
     .eq("id", userId)
     .single();
 
-  const [friends, sentRequests, incomingRequests] = await Promise.all([
+  const [friends, sentRequests, incomingRequests, categories, presets] = await Promise.all([
     getFriends(supabase, userId),
     getSentRequests(supabase, userId),
     getIncomingRequests(supabase, userId),
+    getOwnCategories(supabase, userId),
+    getPresets(supabase, userId),
   ]);
 
   return (
@@ -54,6 +60,10 @@ export default async function ProfilePage() {
       <SentRequestList requests={sentRequests} />
 
       <FriendRequestInbox requests={incomingRequests} />
+
+      <CategoryManager userId={userId} initialCategories={categories} />
+
+      <PresetManager initialPresets={presets} />
 
       <form action={logout}>
         <Button type="submit" variant="secondary" size="sm">

@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { getPresets } from "@/app/(dashboard)/_lib/get-presets";
-import { TransactionRow, type TransactionRowData } from "@/app/(dashboard)/_components/transaction-row";
+import type { TransactionRowData } from "@/app/(dashboard)/_components/transaction-row";
 import { AddTransactionForm } from "./_components/add-transaction-form";
+import { TransactionsList, type TransactionListItem } from "./_components/transactions-list";
 import type { FriendOption } from "./_components/friend-picker";
 
 export default async function TransactionsPage() {
@@ -42,12 +43,12 @@ export default async function TransactionsPage() {
 
   const { data: transactions } = await supabase
     .from("transactions")
-    .select("id, creditor_id, debtor_id, amount, currency, name, created_by, created_at")
+    .select("id, creditor_id, debtor_id, amount, currency, name, category_id, created_by, created_at")
     .is("deleted_at", null)
     .or(`creditor_id.eq.${viewerId},debtor_id.eq.${viewerId}`)
     .order("created_at", { ascending: false });
 
-  const rows = (transactions ?? []).map((transaction) => {
+  const items: TransactionListItem[] = (transactions ?? []).map((transaction) => {
     const counterpartyId = transaction.creditor_id === viewerId ? transaction.debtor_id : transaction.creditor_id;
     const counterpartyProfile = profiles?.find((candidate) => candidate.id === counterpartyId);
 
@@ -65,7 +66,12 @@ export default async function TransactionsPage() {
       },
     };
 
-    return { row, friendId: counterpartyId };
+    return {
+      row,
+      friendId: counterpartyId,
+      direction: transaction.creditor_id === viewerId ? "owed_to_me" : "i_owe",
+      categoryId: transaction.category_id,
+    };
   });
 
   const presets = await getPresets(supabase, viewerId);
@@ -88,16 +94,10 @@ export default async function TransactionsPage() {
         <AddTransactionForm friends={friends} presets={presets} viewerId={viewerId} />
       )}
 
-      {rows.length === 0 ? (
+      {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">No transactions yet.</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-border">
-          {rows.map(({ row, friendId }) => (
-            <Link key={row.id} href={`/friends/${friendId}`} className="block">
-              <TransactionRow transaction={row} />
-            </Link>
-          ))}
-        </ul>
+        <TransactionsList items={items} viewerId={viewerId} />
       )}
     </div>
   );

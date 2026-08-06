@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveParticipants, type Direction } from "./direction";
+import type { Preset } from "./get-presets";
 
 type ActionResult = { error: string | null };
 
@@ -25,7 +26,7 @@ export async function createTransaction(
 ): Promise<ActionResult> {
   const trimmedName = input.name.trim();
   if (!trimmedName) return { error: "Name is required." };
-  if (!(input.amount > 0)) return { error: "Amount must be greater than zero." };
+  if (!(input.amount >= 0)) return { error: "Amount can't be negative." };
   if (!input.categoryId) return { error: "Choose a category." };
 
   const supabase = await createClient();
@@ -56,28 +57,35 @@ export async function createTransaction(
   return { error: null };
 }
 
-// Exists per docs/tasks/debt-ledger.md's build plan, but no UI in
-// docs/tasks/homepage-ui.md or transactions-ui.md calls it yet — editing a
-// past entry's name/amount has no specified interaction (debt-ledger.md's
-// open items still leave "should edits be time-limited" unresolved). Kept
-// here so the shared-actions file matches what those docs ask for; wire up
-// a UI trigger once that's decided.
+// Editing a past entry's full field set — same shape as createTransaction so
+// the edit UI (transactions/_components/edit-transaction-dialog.tsx) can
+// reuse the same name/amount/direction/category form.
 export async function updateTransaction(
   transactionId: string,
   friendId: string,
-  input: { name: string; amount: number }
+  input: { name: string; amount: number; direction: Direction; categoryId: string }
 ): Promise<ActionResult> {
   const trimmedName = input.name.trim();
   if (!trimmedName) return { error: "Name is required." };
-  if (!(input.amount > 0)) return { error: "Amount must be greater than zero." };
+  if (!(input.amount >= 0)) return { error: "Amount can't be negative." };
+  if (!input.categoryId) return { error: "Choose a category." };
 
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims) return { error: "Not signed in." };
 
+  const viewerId = claims.claims.sub;
+  const { creditorId, debtorId } = resolveParticipants(viewerId, friendId, input.direction);
+
   const { error } = await supabase
     .from("transactions")
-    .update({ name: trimmedName, amount: input.amount })
+    .update({
+      name: trimmedName,
+      amount: input.amount,
+      creditor_id: creditorId,
+      debtor_id: debtorId,
+      category_id: input.categoryId,
+    })
     .eq("id", transactionId);
 
   if (error) return { error: "Couldn't update transaction." };
@@ -105,7 +113,10 @@ export async function deleteTransaction(transactionId: string, friendId: string)
   return { error: null };
 }
 
-export async function savePreset(name: string, amount: number): Promise<ActionResult> {
+export async function savePreset(
+  name: string,
+  amount: number
+): Promise<ActionResult & { preset?: Preset }> {
   const trimmedName = name.trim();
   if (!trimmedName) return { error: "Name is required." };
   if (!(amount > 0)) return { error: "Amount must be greater than zero." };
@@ -114,17 +125,22 @@ export async function savePreset(name: string, amount: number): Promise<ActionRe
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims) return { error: "Not signed in." };
 
-  const { error } = await supabase.from("transaction_presets").insert({
-    owner_id: claims.claims.sub,
-    name: trimmedName,
-    amount,
-  });
+  const { data, error } = await supabase
+    .from("transaction_presets")
+    .insert({
+      owner_id: claims.claims.sub,
+      name: trimmedName,
+      amount,
+    })
+    .select("id, name, amount, currency")
+    .single();
 
   if (error) return { error: "Couldn't save preset." };
 
   revalidatePath("/friends/[friendId]", "page");
   revalidatePath("/transactions");
-  return { error: null };
+  revalidatePath("/profile");
+  return { error: null, preset: data };
 }
 
 export async function deletePreset(presetId: string): Promise<ActionResult> {
@@ -144,5 +160,6 @@ export async function deletePreset(presetId: string): Promise<ActionResult> {
 
   revalidatePath("/friends/[friendId]", "page");
   revalidatePath("/transactions");
+  revalidatePath("/profile");
   return { error: null };
 }
