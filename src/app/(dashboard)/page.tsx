@@ -16,7 +16,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 py-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Home</h1>
+      <div className="flex flex-col items-center gap-6 pt-2">
+        <img src="/Velkalaskuri_logo_cropped.png" alt="" className="h-24 w-auto"/>
+        <h1 className="text-3xl font-bold tracking-tight text-primary [-webkit-text-stroke:1px_grey]">
+          VELKACALCULATOR3000
+        </h1>
+      </div>
 
       <TotalsHeader friendBalances={friendBalances} />
 
